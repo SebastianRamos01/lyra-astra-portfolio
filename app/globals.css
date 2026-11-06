@@ -1,0 +1,196 @@
+@import "tailwindcss";
+
+/* Layout: Figma frame 10395:1388 — caption header in thirds, one centered photograph, dock-style strip under it */
+:root {
+  --background: #fafafa;
+  --foreground: #111111;
+  --muted: #707070;
+  --line: #e4e4e4;
+  --focus: #1a5cff;
+  --slot: 92px;
+  --ph: clamp(130px, 21vh, 210px);
+  --hero-h: clamp(260px, 56vh, 760px);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --font-sans: var(--font-inter), "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.35;
+  padding-inline: 16px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* Header text: each character rises out of its line.
+   Underlines don't reach inline-blocks on their own, so both levels inherit them. */
+.split-line {
+  overflow: hidden;
+  white-space: nowrap;
+  text-decoration: inherit;
+}
+
+.split-char {
+  display: inline-block;
+  text-decoration: inherit;
+  animation: char-rise 700ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--i) * 15ms);
+}
+
+@keyframes char-rise {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .split-char {
+    animation: none;
+  }
+}
+
+/* Exactly one screen tall; the stage takes what the header and strip leave, down to a floor. */
+.page {
+  height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(240px, 1fr) auto;
+}
+
+.stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1112px);
+  grid-template-rows: minmax(0, 1fr);
+  justify-content: center;
+  align-items: center;
+  padding-block: 32px 24px;
+}
+
+/* Height depends on the screen, never the photo, so the strip doesn't jump; the frame inside fits the photo's ratio. */
+.hero-cell {
+  container-type: size;
+  height: 100%;
+  max-height: var(--hero-h);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.hero {
+  width: min(100cqw, calc(100cqh * var(--ar)));
+  height: min(calc(100cqw / var(--ar)), 100cqh);
+  overflow: hidden;
+  transition:
+    width 450ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 450ms cubic-bezier(0.22, 1, 0.36, 1);
+  /* .hero mounts once, so this plays on first load only, not on photo changes. */
+  animation: hero-reveal 1100ms cubic-bezier(0.65, 0, 0.35, 1) backwards;
+}
+
+@keyframes hero-reveal {
+  from {
+    clip-path: inset(100% 0 0 0);
+  }
+  to {
+    clip-path: inset(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* Thumbnail strip */
+.strip-viewport {
+  mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+}
+
+/* Hidden only when JS can reveal it; ThumbStrip sets data-ready and each --i once laid out. */
+@media (scripting: enabled) {
+  .strip-viewport:not([data-ready]) .thumb-img {
+    opacity: 0;
+    clip-path: inset(100% 0 0 0);
+  }
+}
+
+.strip-track {
+  height: calc(var(--ph) + 8px);
+  touch-action: pan-y pinch-zoom;
+}
+
+.strip-slide {
+  flex: 0 0 var(--slot);
+}
+
+.thumb {
+  --s: 0.5;
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: inherit;
+  transform: translateX(-50%) scale(var(--s));
+  transform-origin: 50% 100%;
+  will-change: transform;
+}
+
+.thumb-img {
+  display: block;
+  height: var(--ph);
+  width: auto;
+  max-width: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  clip-path: inset(0); /* explicit end state: clip-path can't transition to none */
+  transition:
+    opacity 500ms ease-out,
+    clip-path 700ms cubic-bezier(0.65, 0, 0.35, 1);
+  transition-delay: calc(var(--i, 0) * 70ms);
+}
+
+.thumb--land .thumb-img {
+  height: calc(var(--ph) * 0.72);
+}
+
+/* Must come after .thumb-img: same specificity, so the later rule wins. */
+@media (prefers-reduced-motion: reduce) {
+  .thumb-img {
+    transition: none;
+  }
+}
+
+@media (max-width: 720px) {
+  :root {
+    --slot: 60px;
+    --ph: 150px;
+  }
+
+  .stage {
+    padding-block: 16px;
+  }
+}
